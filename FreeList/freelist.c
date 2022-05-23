@@ -72,14 +72,14 @@ void insert(int position, int size){
 
     //Optimize remaining Fragments, function optimize()
 
-    if(position != -1){
+    if(position != -1 == size > 0){
 
         Fragment *frag = &head;
         while(frag->startAdress != position){
             frag = frag->nextFragment;
         }
 
-        printf("\nInsert Position: %d ",position);
+        printf("\nInsert Position: %d Size: %d",position,size);
 
         Fragment *nextFrag = frag->nextFragment;
         
@@ -100,10 +100,10 @@ void insert(int position, int size){
             
         }
         else{
-            printf("\nDATAFAILURE");
+            printf("\e[1;96m\nDATAFAILURE-----------------------------------------------------------------------------------------------------------------\e[0m");
         }
 
-        printf("    ");
+        printf("\n");
         printReg(&head);
         optimize();
 
@@ -111,7 +111,7 @@ void insert(int position, int size){
 
     }
     else{
-            printf("\nDATAFAILURE-----------------------------------------------------------------------------------------------------------------");
+            printf("\e[1;96m\nDATAFAILURE-----------------------------------------------------------------------------------------------------------------\e[0m");
         }
     
 
@@ -119,7 +119,7 @@ void insert(int position, int size){
 }
 void freee(int position){
 
-    if(position != -1){
+    if(position != -1 && position < dataSize){
         Fragment *frag = head.nextFragment;
         Fragment *prev = &head;
 
@@ -131,12 +131,15 @@ void freee(int position){
         frag->hasData = 0;
 
         printf("\nFree Position: %d", position);
-        printf("    ");
+        printf("\n");
         printReg(&head);
 
         optimize();
 
 
+    }
+    else{
+        printf("\nFree failed");
     }
     
     
@@ -161,8 +164,8 @@ void optimize(){
             free(toDelete);
             
             
-            printf("\nOptimized: %d",frag->startAdress);
-            printf("    ");
+            printf("\nOptimized and combined free at position: %d",frag->startAdress);
+            printf("\n");
             printReg(&head);
             continue;
 
@@ -177,7 +180,7 @@ void optimize(){
 }
 
 void printReg(Fragment *frag){
-
+    printf("\e[0;31m");
     if(printMode == 1){
          char *str;
     if(frag->hasData == 1){
@@ -199,10 +202,11 @@ void printReg(Fragment *frag){
         printReg(frag->nextFragment);
     }
     else{
-        printf(" -> [end]");
+        printf(" -> [NULL]");
     }
     }
     else if(printMode == 2){
+        
         char *str;
         if(frag->hasData == 1){
             printf("[");
@@ -232,10 +236,10 @@ void printReg(Fragment *frag){
             printReg(frag->nextFragment);
         }
         else{
-            printf(" -> [end]");
+            printf(" -> [NULL]");
         }
     }
-   
+    printf("\e[0m");
 }
 
 /*void printData(){
