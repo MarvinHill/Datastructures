@@ -7,11 +7,11 @@
  * **/
 
 //Size of the data
-#define dataSize 100 
+#define dataSize 1000 
 //Debug mode for application shows visual representation of data
 #define printMode 1
 //Data Array
-int data[1000];
+int data[dataSize];
 
 //void printData();
 void printReg();
@@ -104,9 +104,6 @@ void insert(int position, int size){
             frag->nextFragment = newElement;
             
         }
-        else{
-            printf("\e[1;96m\nDATAFAILURE-----------------------------------------------------------------------------------------------------------------\e[0m");
-        }
 
         printf("\n");
         printReg(&head);
@@ -117,7 +114,7 @@ void insert(int position, int size){
 
     }
     else{
-            printf("\e[1;96m\nDATAFAILURE-----------------------------------------------------------------------------------------------------------------\e[0m");
+            printf("\e[1;96m\nDATAFAILURE\e[0m");
         }
     
 
@@ -203,6 +200,22 @@ void updateData(){
         
         frag = frag->nextFragment;
     }
+
+    printf("\nStorage: [");
+
+    for (int i = 0; i < dataSize; i++)
+    {
+        int d = data[i];
+        
+        if(d == 0){
+            printf(".");
+        }
+        if(d > 0){
+            printf("|");
+        }
+    }
+    
+    printf("]");
     
 }
 

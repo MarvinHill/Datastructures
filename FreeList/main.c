@@ -7,6 +7,7 @@
 
 int main(int argc, char const *argv[])
 {
+    /*
     int zahl = 0;
     int posL[1000];
     int index = 0;
@@ -24,9 +25,9 @@ int main(int argc, char const *argv[])
         
     } while (zahl != -1);
     
-    
+    */
 
-    /*
+    
     //printf("%d",position(50));
     insert(position(50), 50);
     insert(position(20), 20);
@@ -39,5 +40,5 @@ int main(int argc, char const *argv[])
     //printf("\n%d",position(20));
     insert(position(20), 20);
     return 0;
-    */
+    
 }
