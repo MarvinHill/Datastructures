@@ -201,7 +201,7 @@ void updateData(){
         frag = frag->nextFragment;
     }
 
-    printf("\nStorage: [");
+    printf("\nStorage: [ ");
 
     for (int i = 0; i < dataSize; i++)
     {
@@ -215,7 +215,7 @@ void updateData(){
         }
     }
     
-    printf("]");
+    printf(" ]");
     
 }
 
