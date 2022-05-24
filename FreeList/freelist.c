@@ -1,19 +1,24 @@
 #include "freelist.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+/** 
+ * Author: Marvin Hill, Felix Brodmann
+ * **/
+
 //Size of the data
-#define dataSize 1000 
+#define dataSize 100 
 //Debug mode for application shows visual representation of data
-#define printMode 2
+#define printMode 1
+//Data Array
+int data[1000];
 
 //void printData();
 void printReg();
 //Optimize free Spaces in List
 void optimize();
-
-/** 
- * Author: Marvin Hill, Felix Brodmann
- * **/
+//Update Data Array
+void updateData();
 
 typedef struct Fragment Fragment;
 typedef struct Fragment { 
@@ -106,6 +111,7 @@ void insert(int position, int size){
         printf("\n");
         printReg(&head);
         optimize();
+        updateData();
 
 
 
@@ -135,6 +141,7 @@ void freee(int position){
         printReg(&head);
 
         optimize();
+        updateData();
 
 
     }
@@ -177,6 +184,26 @@ void optimize(){
     
     
 
+}
+
+void updateData(){
+    Fragment *frag = head.nextFragment;
+    
+    while (frag != NULL)
+    {
+        for (int i = frag->startAdress; i < (frag->startAdress + frag->size); i++)
+        {
+            if(frag->hasData == 1){
+                data[i] = frag->size;
+            }
+            else{
+                data[i] = 0;
+            }
+        }
+        
+        frag = frag->nextFragment;
+    }
+    
 }
 
 void printReg(Fragment *frag){
