@@ -7,33 +7,30 @@
  * **/
 
 //Size of the data
-#define dataSize 1000 
+#define dataSize 100
 //Debug mode for application shows visual representation of data
 #define printMode 1
 //Data Array
 int data[dataSize];
-
 //void printData();
 void printReg();
 //Optimize free Spaces in List
 void optimize();
 //Update Data Array
 void updateData();
+void printData();
 
 typedef struct Fragment Fragment;
 typedef struct Fragment { 
    int size;
    int startAdress;
    Fragment *nextFragment;
-   int hasData;
 } Fragment;
-
-
 
 
 // Virtual Harddrive
 //int data[dataSize];
-Fragment head = {-1,-1,NULL,0};
+Fragment head = {-1,-1,NULL};
 
 int position(int size){
     //Find next free Fragment that is big enought
@@ -48,7 +45,6 @@ int position(int size){
     if(head.nextFragment == NULL){
         Fragment *nextValue = malloc(sizeof(Fragment));
 
-        nextValue->hasData = 0;
         nextValue->nextFragment = NULL;
         nextValue->size = dataSize;
         nextValue->startAdress = 0;
@@ -60,10 +56,11 @@ int position(int size){
 
     while(frag->nextFragment != NULL){
         frag = frag->nextFragment;
-        if(frag->hasData == 0 && frag->size >= size){
+        if(frag->size >= size){
             return frag->startAdress;
         }
     }
+	printf("\nKein Platz mehr!");
     return -1;
 
     }
@@ -89,32 +86,30 @@ void insert(int position, int size){
         Fragment *nextFrag = frag->nextFragment;
         
         if(frag->size == size){
-            frag->hasData = 1;
+			frag->size = 0;
+			updateData(frag);
+			
         }
         else if (frag->size > size){
-            frag->hasData = 1;
 
             Fragment *newElement = malloc(sizeof(Fragment));
-            newElement->hasData=0;
             newElement->nextFragment = nextFrag;
             newElement->size = frag->size - size;
             newElement->startAdress = frag->startAdress + size;
 
-            frag->size = size;
+            frag->size = 0;
+			updateData(frag);
             frag->nextFragment = newElement;
-            
+            updateData(frag->nextFragment);
         }
-
+		
+		printData();
         printf("\n");
-        printReg(&head);
         optimize();
-        updateData();
-
-
-
+		
     }
     else{
-            printf("\e[1;96m\nDATAFAILURE\e[0m");
+            return;
         }
     
 
@@ -124,119 +119,75 @@ void freee(int position){
 
     if(position != -1 && position < dataSize){
         Fragment *frag = head.nextFragment;
-        Fragment *prev = &head;
 
         while(frag->startAdress != position){
-            prev = frag;
             frag = frag->nextFragment;
         }
 
-        frag->hasData = 0;
+        frag->size = frag->nextFragment->startAdress - frag->startAdress - 1;
 
+        printf("\nFree from position: %d to %d", frag->startAdress, frag->startAdress + frag->size);
+		
         printf("\nFree Position: %d", position);
         printf("\n");
-        printReg(&head);
-
-        optimize();
-        updateData();
-
+		updateData(frag);
+		printData();
+        optimize();  
 
     }
     else{
         printf("\nFree failed");
-    }
-    
-    
+    }  
     //Print data
     //printData();
     //Print registry
-    
-    
 }
 
 void optimize(){
-    
-    Fragment *frag = head.nextFragment;
-
-    while(frag->nextFragment != NULL){
-
-        
-        if(frag->hasData == 0 && frag->nextFragment->hasData == 0){
-            Fragment *toDelete = frag->nextFragment;
-            frag->nextFragment = toDelete->nextFragment;
-            frag->size = frag->size + toDelete->size;
-            free(toDelete);
-            
-            
-            printf("\nOptimized and combined free at position: %d",frag->startAdress);
-            printf("\n");
-            printReg(&head);
-            continue;
-
-        }
-        //printf("\nround");
-        frag = frag->nextFragment;
-    }
-
-    
-    
-
+      
 }
 
-void updateData(){
-    Fragment *frag = head.nextFragment;
-    
-    while (frag != NULL)
-    {
-        for (int i = frag->startAdress; i < (frag->startAdress + frag->size); i++)
+
+void updateData(Fragment *frag){
+    if(frag->size == 0){
+        if (frag->nextFragment != NULL)
         {
-            if(frag->hasData == 1){
-                data[i] = frag->size;
-            }
-            else{
-                data[i] = 0;
+            for (int i = frag->startAdress; i < frag->nextFragment->startAdress; i++)
+            {
+            data[i] = (frag->nextFragment->size - frag->startAdress);
             }
         }
-        
-        frag = frag->nextFragment;
+
+        else{
+            for (int i = frag->startAdress; i < dataSize; i++)
+            {
+            data[i] = ((dataSize -1) - frag->startAdress);
+            }
+        }          
+
     }
-
-    printf("\nStorage: [ ");
-
-    for (int i = 0; i < dataSize; i++)
+    else
     {
-        int d = data[i];
-        
-        if(d == 0){
-            printf(".");
-        }
-        if(d > 0){
-            printf("|");
-        }
+        for (int i = frag->startAdress; i < frag->startAdress + frag->size; i++)
+            {
+            data[i] = 0;
+            }
     }
-    
-    printf(" ]");
     
 }
 
 void printReg(Fragment *frag){
     printf("\e[0;31m");
-    if(printMode == 1){
-         char *str;
-    if(frag->hasData == 1){
-        str = "has data";
-        printf("[i: %d s: %d st: %s]",frag->startAdress,frag->size,str);
-    }
-    else if(frag -> startAdress == -1){
+        char *str;
+	if(frag -> startAdress == -1){
         str = "is head";
-        printf("[i: %d s: %d st: %s]",frag->startAdress,frag->size,str);
+        printf("[ad: %p ind: %d s: %d st: %s n: %p]",frag,frag->startAdress,frag->size,str,&*frag->nextFragment);
     }
     else{
-        str = "is free";
-        printf("[i: %d s: %d st: %s]",frag->startAdress,frag->size,str);
+        str = "free";
+        printf("[ad: %p ind: %d s: %d st: %s n: %p]",frag,frag->startAdress,frag->size,str,&*frag->nextFragment);
     }
-    
-    
+       
     if(frag->nextFragment != NULL){
         printf(" -> ");
         printReg(frag->nextFragment);
@@ -244,60 +195,26 @@ void printReg(Fragment *frag){
     else{
         printf(" -> [NULL]");
     }
-    }
-    else if(printMode == 2){
-        
-        char *str;
-        if(frag->hasData == 1){
-            printf("[");
-            for (int i = 0; i < frag->size; i++)
-            {
-                if(i%10 == 0) printf("|");
-            }
-         
-            printf("]");
-        }
-        else if(frag -> startAdress == -1){
-            printf("[head]");
-        }
-        else{
-            printf("[");
-            for (int i = 0; i < frag->size; i++)
-            {
-                if(i%10 == 0) printf(".");
-            }
-         
-            printf("]");
-        }
     
-    
-        if(frag->nextFragment != NULL){
-            printf(" -> ");
-            printReg(frag->nextFragment);
-        }
-        else{
-            printf(" -> [NULL]");
-        }
-    }
     printf("\e[0m");
+
 }
 
-/*void printData(){
-    if(printMode){
-            for (int i = 0; i < dataSize; i++)
-            {
-                if (data[i] == 0)
-                {
-                    printf(".");
-                }
-                else if  (data[i] > 0) {
-                    printf("|");
-                }
-                else{
-                    fprintf(stderr,"DataFailure");
-                }
-                
-            }
-            printf("\n");
-    } 
-}*/
+void printData(){
+    printReg(&head);
+	printf("\nStorage: [ ");
+
+    for (int i = 0; i < dataSize; i++)
+    {
+        int d = data[i];
+        
+        if(d == 0){
+            printf("▂");
+        }
+        if(d > 0){
+            printf("█");
+        }
+    }
+
+    printf(" ]");
+}
