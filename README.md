@@ -16,3 +16,6 @@ This is my take on implementing such a Datastructure.
 ## FreeList
 
 Data managment system that simulates a harddrive
+Free segments are stored in a linked list.
+
+[head] -> [free] -> [free] -> [NULL]
