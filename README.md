@@ -5,7 +5,7 @@ Stack implementation in C
 
 A Stack is a datastructure that abites to the last in first out (LIFO) principle.
 
-There are 3 commands that can be called on an stack: 
+There are 3 commands that can be called on a stack: 
 
 peek - shows what is currently on top of the stack
 pop - returns the top element on the stack and removes it
@@ -16,3 +16,6 @@ This is my take on implementing such a Datastructure.
 ## FreeList
 
 Data managment system that simulates a harddrive
+Free segments are stored in a linked list.
+
+[head] -> [free] -> [free] -> [NULL]
