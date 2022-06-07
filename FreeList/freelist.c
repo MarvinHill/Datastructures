@@ -7,9 +7,7 @@
  * **/
 
 // Size of the data
-#define dataSize 100
-// Debug mode for application shows visual representation of data
-#define printMode 1
+#define dataSize 1000
 // Data Array
 int data[dataSize];
 // void printAll();
@@ -106,9 +104,9 @@ void insert(int position, int size)
             newElement->startAdress = frag->startAdress + size;
 
             frag->size = 0;
-            updateData(frag);
             frag->nextFragment = newElement;
-            updateData(frag->nextFragment);
+            updateData(frag);
+            updateData(newElement);
         }
 
         printAll();
@@ -121,7 +119,7 @@ void insert(int position, int size)
 
     // Found Fragment
 }
-void freee(int position)
+void remove2(int position)
 {
 
     if (position != -1 && position < dataSize)
@@ -133,12 +131,17 @@ void freee(int position)
             frag = frag->nextFragment;
         }
 
-        frag->size = frag->nextFragment->startAdress - frag->startAdress;
+        if(frag->nextFragment != NULL){
+            frag->size = frag->nextFragment->startAdress - frag->startAdress;
+        }
+        else{
+            frag->size = dataSize - frag->startAdress;
+        }
+        
 
         printf("\nFree from position: %d to %d", frag->startAdress, frag->startAdress + frag->size);
         updateData(frag);
         optimize();
-        printAll();
     }
     else
     {
@@ -147,6 +150,8 @@ void freee(int position)
     // Print data
     // printAll();
     // Print registry
+    optimize();
+    printAll();
     printf("\n");
 }
 
@@ -172,8 +177,6 @@ void optimize()
         frag = nextFrag;
         nextFrag = frag->nextFragment;
     }
-    
-
 }
 
 void updateData(Fragment *frag)
@@ -184,7 +187,7 @@ void updateData(Fragment *frag)
         {
             for (int i = frag->startAdress; i < frag->nextFragment->startAdress; i++)
             {
-                data[i] = (frag->nextFragment->size - frag->startAdress);
+                data[i] = 1111;
             }
         }
 
@@ -192,7 +195,7 @@ void updateData(Fragment *frag)
         {
             for (int i = frag->startAdress; i < dataSize; i++)
             {
-                data[i] = ((dataSize - 1) - frag->startAdress);
+                data[i] = 1111;
             }
         }
     }
@@ -207,35 +210,37 @@ void updateData(Fragment *frag)
 
 void printReg(Fragment *frag)
 {
-    printf("\n\e[0;31m");
+    if(frag->size != 0){
+        printf("\n");
+    }
+    printf("\e[0;31m");
     char *str;
     if (frag->startAdress == -1)
     {
-        str = "head";
+        str = "HEAD";
 
-        printf("[ad: %p st: %s n: %p]", frag, str, &*frag->nextFragment);
-    }
-    else if(frag->size == 0)
-    {
-        str = "data";
-
-        printf("[ad: %p ind: %d s: %d st: %s n: %p]", frag, frag->startAdress, frag->size, str, &*frag->nextFragment);
-    }
-    else
-    {
-        str = "free";
-        printf("[ad: %p ind: %d s: %d st: %s n: %p]", frag, frag->startAdress, frag->size, str, &*frag->nextFragment);
-    }
-
-    if (frag->nextFragment != NULL)
-    {
+        printf("[ %s ]",  str);
         printf(" -> ");
-        printReg(frag->nextFragment);
     }
-    else
+    else if(frag->size > 0)
+    {
+        str = "FREI";
+        printf("[ %s | Index:%d Größe:%d ]", str, frag->startAdress, frag->size);
+    }
+
+    if (frag->nextFragment == NULL)
     {
         printf(" -> [NULL]");
     }
+    else
+    {
+        if (frag->size > 0){
+        printf(" -> ");
+        }
+        printReg(frag->nextFragment);
+    }
+    
+    
 
     printf("\e[0m");
 }
@@ -252,10 +257,14 @@ void printData()
         {
             printf("▂");
         }
-        if (d > 0)
+        else if (d > 0)
         {
             printf("█");
         }
+        else{
+            printf("%d",d);
+        }
+
     }
 
     printf(" |");
