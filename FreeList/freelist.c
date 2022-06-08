@@ -27,192 +27,190 @@ typedef struct Fragment
     Fragment *nextFragment;
 } Fragment;
 
-// Virtual Harddrive
-// int data[dataSize];
-Fragment head = {-1, -1, NULL};
+
+//First Element of free list
+Fragment initalFreeFragment = {dataSize,0,NULL};
+
+//Free List where free Fragments are stored
+Fragment headFreeList = {-1, -1, &initalFreeFragment};
+
+
+//Full List where full Fragments are stored - No Element at start
+Fragment headFullList = {-1, -1, NULL};
+
+
 
 int position(int size)
 {
-    // Find next free Fragment that is big enought
-    // Optimize remaining Fragments, function optimize()
+    Fragment *frag = headFreeList.nextFragment;
 
-    Fragment *frag = &head;
-
-    if (size > dataSize)
+    while (frag != NULL)
     {
-        return -1;
-    }
-
-    if (head.nextFragment == NULL)
-    {
-        Fragment *nextValue = malloc(sizeof(Fragment));
-
-        nextValue->nextFragment = NULL;
-        nextValue->size = dataSize;
-        nextValue->startAdress = 0;
-
-        head.nextFragment = nextValue;
-
-        return 0;
-    }
-
-    while (frag->nextFragment != NULL)
-    {
-        frag = frag->nextFragment;
-        if (frag->size >= size)
+        if (frag->size >= size )
         {
             return frag->startAdress;
         }
+        
+        frag = frag->nextFragment;
     }
-    printf("\nKein Platz mehr!\n");
+    
     return -1;
+    
 }
 
 void insert(int position, int size)
 {
-    // if Fragment matching the position not hasData then insert it
-    // if free space is big enought
-    // if Fragment not at start of free Fragment then add a Fragment in front
-    // if Fragment not completely fills the free Fragment add a Fragment behind the data
-
-    // Optimize remaining Fragments, function optimize()
-
-    if (position != -1 == size > 0)
-    {
-
-        Fragment *frag = &head;
-        while (frag->startAdress != position)
-        {
-            frag = frag->nextFragment;
-        }
-
-        printf("\nInsert Position: %d Size: %d", position, size);
-
-        Fragment *nextFrag = frag->nextFragment;
-
-        if (frag->size == size)
-        {
-            frag->size = 0;
-            updateData(frag);
-        }
-        else if (frag->size > size)
-        {
-
-            Fragment *newElement = malloc(sizeof(Fragment));
-            newElement->nextFragment = nextFrag;
-            newElement->size = frag->size - size;
-            newElement->startAdress = frag->startAdress + size;
-
-            frag->size = 0;
-            frag->nextFragment = newElement;
-            updateData(frag);
-            updateData(newElement);
-        }
-
-        printAll();
-        printf("\n");
-    }
-    else
+    
+    // returns if position -1 which means that there is no more data space
+    if (position == -1)
     {
         return;
     }
+    
+    Fragment *previousFreeFrag = &headFreeList;
+    Fragment *freeFrag = headFreeList.nextFragment;
 
-    // Found Fragment
-}
-void remove2(int position)
-{
+    Fragment *previousFullFrag = &headFullList;
 
-    if (position != -1 && position < dataSize)
+
+    while (freeFrag->startAdress != position)
     {
-        Fragment *frag = head.nextFragment;
-
-        while (frag->startAdress != position)
-        {
-            frag = frag->nextFragment;
-        }
-
-        if(frag->nextFragment != NULL){
-            frag->size = frag->nextFragment->startAdress - frag->startAdress;
-        }
-        else{
-            frag->size = dataSize - frag->startAdress;
-        }
+        previousFreeFrag = freeFrag;
+        freeFrag= freeFrag->nextFragment;
+    }
+    while (previousFullFrag->nextFragment != NULL)
+    {
+        if(previousFullFrag->nextFragment->startAdress > position) break;
+        previousFullFrag = previousFullFrag->nextFragment;
+    }
+    
+    if(freeFrag->size == size){
+        
+        previousFreeFrag->nextFragment = freeFrag->nextFragment;
         
 
-        printf("\nFree from position: %d to %d", frag->startAdress, frag->startAdress + frag->size);
-        updateData(frag);
+        // Add free Fragment to full list
+        freeFrag->nextFragment = previousFullFrag->nextFragment;
+        previousFullFrag->nextFragment = freeFrag;
+        
+        // Change data freeFrag, daten = 1
+        updateData(freeFrag, freeFrag->size);
+
         optimize();
+        printAll();
+        return;
     }
-    else
+
+    if(freeFrag->size > size){
+        freeFrag->startAdress += size;
+        freeFrag->size -= size;
+        // Add to full list new Element
+        Fragment *newFullFragment = malloc(sizeof(Fragment));
+        newFullFragment->size = size;
+        newFullFragment->startAdress = position;
+        newFullFragment->nextFragment = previousFullFrag->nextFragment;
+        previousFullFrag->nextFragment = newFullFragment;
+
+        // Update Data fullFrag und freeFrag
+        updateData(freeFrag, 0);
+        updateData(newFullFragment, newFullFragment->size);
+
+        optimize();
+        printAll();
+        
+        return;
+    }
+    
+    fprintf(stderr, "INSERT FAILURE");
+}
+
+void remove2(int position)
+{
+    Fragment *previousFullListFragment = &headFullList;
+    Fragment *fullListFragment = headFullList.nextFragment;
+
+    while (fullListFragment->startAdress != position)
     {
-        printf("\nFree failed");
+        previousFullListFragment = fullListFragment;
+        fullListFragment = fullListFragment->nextFragment;
     }
-    // Print data
-    // printAll();
-    // Print registry
+    
+    previousFullListFragment->nextFragment = fullListFragment->nextFragment;
+
+    Fragment *previousFreeListFragment = &headFreeList;
+    Fragment *freeListFragment = headFreeList.nextFragment;
+
+    if(freeListFragment == NULL){
+        headFreeList.nextFragment = fullListFragment;
+        fullListFragment->nextFragment = NULL;
+        updateData(fullListFragment,0);
+        optimize();
+        printAll();
+        return;
+    }
+
+    while (fullListFragment->startAdress > freeListFragment->startAdress)
+    {
+        previousFreeListFragment = freeListFragment;
+        freeListFragment = freeListFragment->nextFragment;
+
+        if(freeListFragment == NULL){
+            previousFreeListFragment->nextFragment = fullListFragment;
+            fullListFragment->nextFragment = NULL;
+            updateData(fullListFragment,0);
+            optimize();
+            printAll();
+            return;
+        }
+    }
+
+    previousFreeListFragment->nextFragment = fullListFragment;
+    fullListFragment->nextFragment = freeListFragment;
+    
+    updateData(fullListFragment,0);
     optimize();
     printAll();
-    printf("\n");
 }
 
 void optimize()
 {
-    Fragment *frag = head.nextFragment;
-    Fragment *nextFrag = frag->nextFragment;
 
-    while (frag->nextFragment != NULL)
+    if (headFreeList.nextFragment == NULL)
     {
-        if(frag->size > 0 && nextFrag->size > 0)
-        {
-            frag->size = frag->size + frag->nextFragment->size;
-            frag->nextFragment = nextFrag->nextFragment;
-            nextFrag->nextFragment = NULL;
+        return;
+    }
+    
 
-            free(nextFrag);
+    Fragment *frag = headFreeList.nextFragment;
+    Fragment *nextFrag = frag->nextFragment;
+    Fragment *toDelete = NULL;
 
-            continue;
+    while(nextFrag != NULL){
 
-        }
-
-        frag = nextFrag;
+    if ((frag->startAdress + frag->size ) == nextFrag->startAdress)
+    {
+        frag->nextFragment = nextFrag->nextFragment;
+        frag->size += nextFrag->size;
+        toDelete = nextFrag;    
         nextFrag = frag->nextFragment;
+        free(nextFrag);
+        continue;
+    }
+        frag = nextFrag;
+        nextFrag = nextFrag->nextFragment;
     }
 }
 
-void updateData(Fragment *frag)
+void updateData(Fragment *frag, int dataToWrite)
 {
-    if (frag->size == 0)
+    for (int i = frag->startAdress; i < (frag->startAdress + frag->size); i++)
     {
-        if (frag->nextFragment != NULL)
-        {
-            for (int i = frag->startAdress; i < frag->nextFragment->startAdress; i++)
-            {
-                data[i] = 1111;
-            }
-        }
-
-        else
-        {
-            for (int i = frag->startAdress; i < dataSize; i++)
-            {
-                data[i] = 1111;
-            }
-        }
-    }
-    else
-    {
-        for (int i = frag->startAdress; i < frag->startAdress + frag->size; i++)
-        {
-            data[i] = 0;
-        }
-    }
+        data[i] = dataToWrite;
+    } 
 }
 
 void printReg(Fragment *frag)
 {
-    if(frag->size != 0){
-        printf("\n");
-    }
     printf("\e[0;31m");
     char *str;
     if (frag->startAdress == -1)
@@ -220,12 +218,11 @@ void printReg(Fragment *frag)
         str = "HEAD";
 
         printf("[ %s ]",  str);
-        printf(" -> ");
     }
     else if(frag->size > 0)
     {
-        str = "FREI";
-        printf("[ %s | Index:%d Größe:%d ]", str, frag->startAdress, frag->size);
+        str = "Fragment";
+        printf(" -> [ %s | i: %d | s: %d ]", str, frag->startAdress, frag->size);
     }
 
     if (frag->nextFragment == NULL)
@@ -234,9 +231,6 @@ void printReg(Fragment *frag)
     }
     else
     {
-        if (frag->size > 0){
-        printf(" -> ");
-        }
         printReg(frag->nextFragment);
     }
     
@@ -265,6 +259,8 @@ void printData()
             printf("%d",d);
         }
 
+        //printf(" %d ",d);
+
     }
 
     printf(" |");
@@ -272,6 +268,10 @@ void printData()
 
 void printAll()
 {
-    printReg(&head);
+    printf("\nFullList:  ");
+    printReg(&headFullList);
+    printf("\n");
+    printf("FreeList:  ");
+    printReg(&headFreeList);
     printData();
 }
