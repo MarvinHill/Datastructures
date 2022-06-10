@@ -28,11 +28,8 @@ typedef struct Fragment
 } Fragment;
 
 
-//First Element of free list
-Fragment initalFreeFragment = {dataSize,0,NULL};
-
 //Free List where free Fragments are stored
-Fragment headFreeList = {-1, -1, &initalFreeFragment};
+Fragment headFreeList = {-1, -1, NULL};
 
 
 //Full List where full Fragments are stored - No Element at start
@@ -42,12 +39,24 @@ Fragment headFullList = {-1, -1, NULL};
 
 int position(int size)
 {
+    
+    if (headFreeList.nextFragment == NULL && headFullList.nextFragment == NULL)
+    {
+        Fragment *initalFreeFragment = malloc(sizeof(Fragment));
+        initalFreeFragment->startAdress = 0;
+        initalFreeFragment->size = dataSize;
+        initalFreeFragment->nextFragment = NULL;
+        headFreeList.nextFragment = initalFreeFragment;
+    }
+    
+
     Fragment *frag = headFreeList.nextFragment;
 
     while (frag != NULL)
     {
         if (frag->size >= size )
         {
+            printf("\nFree Fragment found at position %d",frag->startAdress);
             return frag->startAdress;
         }
         
@@ -96,6 +105,7 @@ void insert(int position, int size)
         // Change data freeFrag, daten = 1
         updateData(freeFrag, freeFrag->size);
 
+        printf("\nData inserted at position %d with size %d",position,size);
         optimize();
         printAll();
         return;
@@ -115,6 +125,7 @@ void insert(int position, int size)
         updateData(freeFrag, 0);
         updateData(newFullFragment, newFullFragment->size);
 
+        printf("\nData inserted at position %d with size %d",position,size);
         optimize();
         printAll();
         
@@ -144,6 +155,7 @@ void remove2(int position)
         headFreeList.nextFragment = fullListFragment;
         fullListFragment->nextFragment = NULL;
         updateData(fullListFragment,0);
+        printf("\nData removed at position %d",position);
         optimize();
         printAll();
         return;
@@ -158,6 +170,7 @@ void remove2(int position)
             previousFreeListFragment->nextFragment = fullListFragment;
             fullListFragment->nextFragment = NULL;
             updateData(fullListFragment,0);
+            printf("\nData removed at position %d",position);
             optimize();
             printAll();
             return;
@@ -168,6 +181,7 @@ void remove2(int position)
     fullListFragment->nextFragment = freeListFragment;
     
     updateData(fullListFragment,0);
+    printf("\nData removed at position %d",position);
     optimize();
     printAll();
 }
@@ -183,18 +197,20 @@ void optimize()
 
     Fragment *frag = headFreeList.nextFragment;
     Fragment *nextFrag = frag->nextFragment;
-    Fragment *toDelete = NULL;
 
     while(nextFrag != NULL){
 
     if ((frag->startAdress + frag->size ) == nextFrag->startAdress)
     {
-        frag->nextFragment = nextFrag->nextFragment;
+        Fragment *toDelte = nextFrag;
+
         frag->size += nextFrag->size;
-        toDelete = nextFrag;    
-        nextFrag = frag->nextFragment;
-        free(nextFrag);
-        continue;
+        frag->nextFragment = nextFrag->nextFragment;
+        
+        free(toDelte);
+
+        optimize();
+        return;
     }
         frag = nextFrag;
         nextFrag = nextFrag->nextFragment;
@@ -268,10 +284,7 @@ void printData()
 
 void printAll()
 {
-    printf("\nFullList:  ");
-    printReg(&headFullList);
-    printf("\n");
-    printf("FreeList:  ");
+    printf("\nFreeList:  ");
     printReg(&headFreeList);
     printData();
 }

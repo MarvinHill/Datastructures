@@ -7,15 +7,20 @@
 
 int main(int argc, char const *argv[])
 {
-    printf("test");
-    
-    insert(position(50), 50);
-    
-    //insert(position(20), 20);
-    //insert(position(20), 20);
-    //insert(position(20), 20);
-    //remove2(0);
-    //remove2(70);
+    int elemente[10];
+
+    elemente[0] = position(50);
+    insert(elemente[0], 50);
+    elemente[1] = position(20);
+    insert(elemente[1], 20);
+    elemente[2] = position(20);
+    insert(elemente[2], 20);
+    elemente[3] = position(20);
+    insert(elemente[3], 20);
+    remove2(elemente[2]);
+    remove2(elemente[3]);
+    remove2(elemente[1]);
+    remove2(elemente[0]);
     
 
     return 0;
