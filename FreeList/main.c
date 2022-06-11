@@ -18,10 +18,12 @@ int main(int argc, char const *argv[])
     elemente[3] = position(20);
     insert(elemente[3], 20);
     remove2(elemente[2]);
+    elemente[4] = position(10);
+    insert(elemente[4],10);
     remove2(elemente[3]);
     remove2(elemente[1]);
     remove2(elemente[0]);
-    
+    remove2(elemente[4]);
 
     return 0;
     

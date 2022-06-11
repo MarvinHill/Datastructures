@@ -8,17 +8,6 @@
 
 // Size of the data
 #define dataSize 1000
-// Data Array
-int data[dataSize];
-// void printAll();
-void printReg();
-// Optimize free Spaces in List
-void optimize();
-// Update Data Array
-void updateData();
-void printData();
-void printAll();
-
 typedef struct Fragment Fragment;
 typedef struct Fragment
 {
@@ -26,6 +15,19 @@ typedef struct Fragment
     int startAdress;
     Fragment *nextFragment;
 } Fragment;
+
+// Data Array
+char data[dataSize];
+// void printAll();
+void printReg(Fragment *frag);
+// Optimize free Spaces in List
+void optimize();
+// Update Data Array
+void updateData(Fragment *frag, char dataToWrite);
+void printData();
+void printAll();
+
+
 
 
 //Free List where free Fragments are stored
@@ -217,7 +219,7 @@ void optimize()
     }
 }
 
-void updateData(Fragment *frag, int dataToWrite)
+void updateData(Fragment *frag, char dataToWrite)
 {
     for (int i = frag->startAdress; i < (frag->startAdress + frag->size); i++)
     {
@@ -267,15 +269,11 @@ void printData()
         {
             printf("▂");
         }
-        else if (d > 0)
-        {
+        else{
             printf("█");
         }
-        else{
-            printf("%d",d);
-        }
 
-        //printf(" %d ",d);
+        // printf(" %d ",d);
 
     }
 
@@ -287,4 +285,5 @@ void printAll()
     printf("\nFreeList:  ");
     printReg(&headFreeList);
     printData();
+    printf("\n");
 }
