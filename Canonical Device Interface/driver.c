@@ -38,6 +38,7 @@ void startDriver()
 void stopDriver()
 {
     pthread_join(driver,NULL);
+    
 }
 
 void *threadFunc(void *v)

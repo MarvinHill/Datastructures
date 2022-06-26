@@ -50,6 +50,7 @@ void writeData(char* c){
         sem_post(&printSemt);
 
     sem_post(&sem);
+    
 }
 char* readData(){
     sem_wait(&sem);
