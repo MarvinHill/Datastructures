@@ -1,12 +1,18 @@
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "driver.h"
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 void writeData(char* c);
 char* readData();
 
-char* data1 = "data1";
-char* data2 = "data2";
+char* data1 = "AA";
+char* data2 = "BB";
 
 int main(int argc, char const *argv[])
 {
@@ -16,31 +22,34 @@ int main(int argc, char const *argv[])
     writeData(data1);
     writeData(data2);
     readData();
-    //stopDriver();
+    stopDriver();
     
     return 0;
 }
 
 void writeData(char* c){
-    int done = 0;
 
-    while (!done)
-    {
-        
-    
-        if(strcmp(command, "00") == 0){
-        sem_wait(&sem);
-        command = "02";
+    sem_wait(&sem);
 
         for (int i = 0; i < dataSize; i++)
         {
-            data[i] = &c[i];
+            data[i] = "";
         }
+        
+        for (int i = 0; i < dataSize; i++)
+        {
+            data[i] = c;
         }
 
-        sem_post(&sem);
-        done = 1;
-    }
+        command = "02";
+
+        usleep(500);
+        
+        sem_wait(&printSemt);
+        printData();
+        sem_post(&printSemt);
+
+    sem_post(&sem);
 }
 char* readData(){
     sem_wait(&sem);
