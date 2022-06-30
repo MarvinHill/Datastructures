@@ -1,8 +1,4 @@
-#ifdef _WIN32
-#include <Windows.h>
-#else
 #include <unistd.h>
-#endif
 
 #include <string.h>
 #include <stdio.h>
@@ -15,19 +11,22 @@
 void *threadFunc(void *v);
 
 // Driver
-char* internalData[internalDataSize];
+char internalData[internalDataSize];
 
 pthread_t driver;
 int iret1;
 
+int ind;
+
 char *status = "00";
 char *command = "00";
-char* data[dataSize];
+char data[dataSize];
 sem_t sem;
 sem_t printSemt;
 
 void startDriver()
 {
+    ind = 0;
     status = "00";
     sem_init(&sem, 0, 1);
     sem_init(&printSemt, 0, 1);
@@ -54,19 +53,21 @@ void *threadFunc(void *v)
         if (strcmp(command,"01") == 0){
             sem_wait(&sem);
 
-            sem_wait(&printSemt);
-            printData();
-            sem_post(&printSemt);
-
             status = "01";
             // --------------------------------------------------------
-            // code
+            
+            for (int i = dataSize; i >= 0;)
+            {
+                data[i--] = internalData[ind--];            
+            }
+
             // --------------------------------------------------------
            
             status = "00";
             command = "00";
 
             sem_wait(&printSemt);
+            printf("\nREAD\n------------------------------------");
             printData();
             sem_post(&printSemt);
 
@@ -76,21 +77,26 @@ void *threadFunc(void *v)
         if (strcmp(command,"02") == 0){
             sem_wait(&sem);
             
-            
-            sem_wait(&printSemt);
-            printData();
-            sem_post(&printSemt);
 
             status = "01";
             // --------------------------------------------------------
-            // code
+        
+            for (int i = 0; i < dataSize; i++)
+            {
+                internalData[ind++] = data[i++];
+            }
+            for (int i = 0; i < dataSize; i++)
+            {
+                data[i] = '\0';
+            }
             // --------------------------------------------------------
             
             status = "00";
             command = "00";
 
             sem_wait(&printSemt);
-            printData();
+            printf("\nWRITE\n------------------------------------");
+            printData();   
             sem_post(&printSemt);
 
             sem_post(&sem);
@@ -100,7 +106,7 @@ void *threadFunc(void *v)
             sem_wait(&sem);
             status = "01";
             // --------------------------------------------------------
-            // code
+            ind = 0;
             // --------------------------------------------------------
             status = "00";
             command = "00";
@@ -117,7 +123,17 @@ void *threadFunc(void *v)
             command = "00";
             sem_post(&sem);
         } // 08 delete
-        
+        if (ind < 0)
+                {
+                    sem_wait(&sem);
+                    status = "02";
+                    sem_post(&sem);
+
+                    sem_wait(&printSemt);
+                    printData();
+                    sem_post(&printSemt);
+                    break;
+                }
     }
     
     return NULL;
@@ -126,21 +142,22 @@ void *threadFunc(void *v)
 void printData(){
     printf("\n\nstatus: %s",status);
     printf("\ncommand: %s",command);
+    printf("\nindex: %d",ind);
     printf("\ndataSize: %d",dataSize);
     printf("\ninternalDataSize: %d",internalDataSize);
 
     printf("\nData: [");
     for (int i = 0; i < dataSize; i++)
     {
-        printf("%s",data[i]);
+        printf("%d",data[i]);
     }
     printf("]");
 
     printf("\nInternalData: [");
     for (int i = 0; i < internalDataSize; i++)
     {
-        char* d = internalData[i];
-        if(d != NULL) printf("%s",d);
+        char d = internalData[i];
+        printf("%d",d);
     }
     printf("]");
 }
