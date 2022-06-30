@@ -1,163 +1,168 @@
-#include <unistd.h>
-
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
 
 #include "driver.h"
-
 #include <pthread.h>
+#include <time.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-void *threadFunc(void *v);
+// Constants
+#define dataSize 20
+#define internalDataSize 1024
 
-// Driver
-char internalData[internalDataSize];
+// Print Methode
+void printData();
 
-pthread_t driver;
-int iret1;
+//Variables
+static char data[dataSize];
+static char internalData[internalDataSize];
+static int ind = 0;
 
-int ind;
+//Registries
+char* status = "00";
+char* command = "00";
 
-char *status = "00";
-char *command = "00";
-char data[dataSize];
+// Semaphore
 sem_t sem;
-sem_t printSemt;
 
-void startDriver()
-{
-    ind = 0;
-    status = "00";
-    sem_init(&sem, 0, 1);
-    sem_init(&printSemt, 0, 1);
-    pthread_detach(driver);
-    iret1 = pthread_create(&driver, NULL, (void *)&threadFunc, NULL); 
-}
+// Thread
+void* run(void *arg);
+pthread_t thread;
+volatile int running = 1;
 
-void stopDriver()
-{
-    pthread_join(driver,NULL);
-    
-}
 
-void *threadFunc(void *v)
-{
-
-    while (1)
-    {
-        if (strcmp(command,"00") == 0){
-            continue;
-            sem_post(&sem);
-        } // 00 idle
-
-        if (strcmp(command,"01") == 0){
-            sem_wait(&sem);
-
-            status = "01";
-            // --------------------------------------------------------
-            
-            for (int i = dataSize; i >= 0;)
-            {
-                data[i--] = internalData[ind--];            
-            }
-
-            // --------------------------------------------------------
-           
-            status = "00";
-            command = "00";
-
-            sem_wait(&printSemt);
-            printf("\nREAD\n------------------------------------");
-            printData();
-            sem_post(&printSemt);
-
-            sem_post(&sem);
-            } // 01 read
-
-        if (strcmp(command,"02") == 0){
-            sem_wait(&sem);
-            
-
-            status = "01";
-            // --------------------------------------------------------
-        
-            for (int i = 0; i < dataSize; i++)
-            {
-                internalData[ind++] = data[i++];
-            }
-            for (int i = 0; i < dataSize; i++)
-            {
-                data[i] = '\0';
-            }
-            // --------------------------------------------------------
-            
-            status = "00";
-            command = "00";
-
-            sem_wait(&printSemt);
-            printf("\nWRITE\n------------------------------------");
-            printData();   
-            sem_post(&printSemt);
-
-            sem_post(&sem);
-            } // 02 write
-
-        if (strcmp(command,"04") == 0){
-            sem_wait(&sem);
-            status = "01";
-            // --------------------------------------------------------
-            ind = 0;
-            // --------------------------------------------------------
-            status = "00";
-            command = "00";
-            sem_post(&sem);
-        } // 04 reset
-
-        if (strcmp(command,"08") == 0){
-            sem_wait(&sem);
-            status = "01";
-            // --------------------------------------------------------
-            // code
-            // --------------------------------------------------------
-            status = "00";
-            command = "00";
-            sem_post(&sem);
-        } // 08 delete
-        if (ind < 0)
-                {
-                    sem_wait(&sem);
-                    status = "02";
-                    sem_post(&sem);
-
-                    sem_wait(&printSemt);
-                    printData();
-                    sem_post(&printSemt);
-                    break;
-                }
-    }
-    
-    return NULL;
-}
-
-void printData(){
-    printf("\n\nstatus: %s",status);
-    printf("\ncommand: %s",command);
-    printf("\nindex: %d",ind);
-    printf("\ndataSize: %d",dataSize);
-    printf("\ninternalDataSize: %d",internalDataSize);
-
-    printf("\nData: [");
+void writeData(char* inData){
     for (int i = 0; i < dataSize; i++)
     {
-        printf("%d",data[i]);
+        data[i] = *inData;
+        inData++;
     }
-    printf("]");
 
-    printf("\nInternalData: [");
+    command = "02";
+    
+    sem_post(&sem);
+}
+
+char* readData(){
+    // Implementierung
+    sem_post(&sem);
+} 
+char* getStatus(){
+    return status;
+}
+
+void* run(void *arg){
+    while (1)
+    {
+    sem_wait(&sem);
+    
+    if (strcmp(command, "00") == 0) // Idle
+    {
+        if(running == 0 ){
+            printData();
+            sem_post(&end);
+            break;}
+    }
+    if (strcmp(command, "01") == 0) // Read
+    {
+        status = "01";
+        
+
+        
+        status = "00";
+        command = "00";
+    }
+    if (strcmp(command, "02") == 0) // Write
+    {
+        status = "01";
+
+        // Problem Memory gets deleted every time
+        for (int i = 0; i < dataSize; i++)
+        {
+            internalData[ind++] = data[i];
+            data[i] = 0;
+        }
+
+        status = "00";
+        command = "00";
+
+    }
+    if (strcmp(command, "04") == 0) // Reset
+    {
+        status = "01";
+        
+        status = "00";
+        command = "00";
+    }
+    if (strcmp(command, "08") == 0) // Delete
+    {
+        status = "01";
+        
+        status = "00";
+        command = "00";
+    }
+    printData();
+    }
+    
+}
+
+void startDriver(){
+    running = 1;
+    sem_init(&sem,0,0);
+    sem_init(&end,0,0);
+    pthread_create(&thread,NULL,&run,NULL);
+    pthread_detach(thread);
+    
+}
+void stopDriver(){
+    running = 0;
+};
+
+void printData(){
+    printf("\nDATA:[");
+    for (int i = 0; i < dataSize; i++)
+    {
+        
+        char temp = data[i];
+
+        if(temp == 0){
+            temp = '_';
+        }
+        
+        printf("%c", temp);
+    }
+    
+    printf("]");
+    printf("\nINTERNALDATA:[");
     for (int i = 0; i < internalDataSize; i++)
     {
-        char d = internalData[i];
-        printf("%d",d);
+         
+        char temp = internalData[i];
+
+        if(temp == 0){
+            temp = '_';
+        }
+        
+        printf("%c", temp);
     }
-    printf("]");
+    
+    printf("]\n");     
 }
+
+
+char* data1 = "HalloHalloHalloHallo";
+char* data2 = "BalloBalloBalloBallo";
+
+
+
+int main(int argc, char const *argv[])
+{
+    startDriver();
+    writeData(data1);
+    writeData(data2);
+    stopDriver();
+    sem_wait(&end);
+    return 0;
+}
+
