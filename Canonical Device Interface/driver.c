@@ -7,21 +7,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Constants
-#define dataSize 20
-#define internalDataSize 1024
+
 
 // Print Methode
 void printData();
-
-//Variables
-static char data[dataSize];
-static char internalData[internalDataSize];
-static int ind = 0;
-
-//Registries
-char* status = "00";
-char* command = "00";
 
 // Semaphore
 sem_t sem;
@@ -40,7 +29,6 @@ void writeData(char* inData){
     }
 
     command = "02";
-    
     sem_post(&sem);
 }
 
@@ -55,13 +43,13 @@ char* getStatus(){
 void* run(void *arg){
     while (1)
     {
-    sem_wait(&sem);
     
     if (strcmp(command, "00") == 0) // Idle
     {
         if(running == 0 ){
             printData();
             sem_post(&end);
+            pthread_exit(0);
             break;}
     }
     if (strcmp(command, "01") == 0) // Read
@@ -69,7 +57,7 @@ void* run(void *arg){
         status = "01";
         
 
-        
+        printData();
         status = "00";
         command = "00";
     }
@@ -78,12 +66,13 @@ void* run(void *arg){
         status = "01";
 
         // Problem Memory gets deleted every time
-        for (int i = 0; i < dataSize; i++)
+        for (int i = 0; (i < dataSize) && (ind < internalDataSize); i++)
         {
             internalData[ind++] = data[i];
             data[i] = 0;
         }
 
+        printData();
         status = "00";
         command = "00";
 
@@ -91,7 +80,8 @@ void* run(void *arg){
     if (strcmp(command, "04") == 0) // Reset
     {
         status = "01";
-        
+
+        printData();  
         status = "00";
         command = "00";
     }
@@ -99,12 +89,13 @@ void* run(void *arg){
     {
         status = "01";
         
+        printData();
         status = "00";
         command = "00";
     }
-    printData();
+    sem_wait(&sem);
     }
-    
+   
 }
 
 void startDriver(){
