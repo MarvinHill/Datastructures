@@ -1,97 +1,96 @@
 
 #include "driver.h"
-#include <pthread.h>
-#include <time.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-
-
-// Print Methode
-void printData();
+char status = 0;
+char command = 0;
+char data[dataSize];
 
 // Semaphore
 sem_t sem;
-
 // Thread
 void* run(void *arg);
 pthread_t thread;
 volatile int running = 1;
 
 
-void writeData(char* inData){
-    for (int i = 0; i < dataSize; i++)
-    {
-        data[i] = *inData;
-        inData++;
-    }
-
-    command = "02";
-    sem_post(&sem);
-}
-
-char* readData(){
-    // Implementierung
-    sem_post(&sem);
-} 
-char* getStatus(){
-    return status;
-}
-
 void* run(void *arg){
     while (1)
     {
-    
-    if (strcmp(command, "00") == 0) // Idle
+    if(running == 0 ){
+        sem_post(&end);
+        break;}
+
+    if (command == 1) // Read
     {
-        if(running == 0 ){
-            printData();
-            sem_post(&end);
-            pthread_exit(0);
-            break;}
-    }
-    if (strcmp(command, "01") == 0) // Read
-    {
-        status = "01";
+        setStatus(1);
+
+        
+        for (int i = (dataSize-1); i >= 0; i--)
+        {
+            ind--;
+            data[i] = internalData[ind];
+            internalData[ind] = 0;
+            if(ind < 0){
+                setStatus(2);
+                break;
+            }
+            
+        }
+        
         
 
         printData();
-        status = "00";
-        command = "00";
+        setStatus(0);
+        setCommand(0);
     }
-    if (strcmp(command, "02") == 0) // Write
+    if (command == 2) // Write
     {
-        status = "01";
+        setStatus(1);
 
         // Problem Memory gets deleted every time
-        for (int i = 0; (i < dataSize) && (ind < internalDataSize); i++)
+        for (int i = 0; i < dataSize; i++)
         {
             internalData[ind++] = data[i];
             data[i] = 0;
+            if(ind > internalDataSize){
+                setStatus(2);
+                break;
+            }
         }
 
         printData();
-        status = "00";
-        command = "00";
+        setStatus(0);    
+        setCommand(0);
 
     }
-    if (strcmp(command, "04") == 0) // Reset
+    if (command == 4) // Reset
     {
-        status = "01";
-
-        printData();  
-        status = "00";
-        command = "00";
-    }
-    if (strcmp(command, "08") == 0) // Delete
-    {
-        status = "01";
+        setStatus(1);
         
-        printData();
-        status = "00";
-        command = "00";
+        ind = 0;
+        
+        printData();  
+        setStatus(0);
+        setCommand(0);
+    }
+    if (command == 8) // Delete
+    {
+        setStatus(1);
+
+        do
+        {
+            ind--;
+            internalData[ind] = 0;
+        } while (ind > 0);
+
+        for (int i = 0; i < dataSize; i++)
+        {
+            data[i] = 0;
+        }        
+        
+        printData(); 
+        status = 0;
+        setCommand(0);
     }
     sem_wait(&sem);
     }
@@ -111,20 +110,7 @@ void stopDriver(){
 };
 
 void printData(){
-    printf("\nDATA:[");
-    for (int i = 0; i < dataSize; i++)
-    {
-        
-        char temp = data[i];
-
-        if(temp == 0){
-            temp = '_';
-        }
-        
-        printf("%c", temp);
-    }
-    
-    printf("]");
+    printf("\nSTATUS:%d",status);
     printf("\nINTERNALDATA:[");
     for (int i = 0; i < internalDataSize; i++)
     {
@@ -142,18 +128,5 @@ void printData(){
 }
 
 
-char* data1 = "HalloHalloHalloHallo";
-char* data2 = "BalloBalloBalloBallo";
 
-
-
-int main(int argc, char const *argv[])
-{
-    startDriver();
-    writeData(data1);
-    writeData(data2);
-    stopDriver();
-    sem_wait(&end);
-    return 0;
-}
 
